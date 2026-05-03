@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Two-layer pipeline:
 1. **ASR layer** — Faster-Whisper (CTranslate2, INT8 quantization, Whisper Large-v3-Turbo) transcribes audio to raw text
-2. **LLM layer** — Language model cleans, punctuates, and corrects the transcript (default: Ollama/gemma3; optional: Claude Haiku or OpenAI with user-supplied key)
+2. **LLM layer** — Language model cleans, punctuates, and corrects the transcript (default: Ollama/gemma4:e4b; optional: Claude Haiku or OpenAI with user-supplied key)
 
 This two-layer approach is why AI app dictation is dramatically better than Apple's built-in speech recognition.
 
@@ -31,7 +31,7 @@ A single `transcribe()` abstraction routes to whichever mode is active. The app 
 | Layer | Choice |
 |---|---|
 | ASR | Faster-Whisper, Whisper Large-v3-Turbo (CTranslate2, INT8) |
-| LLM post-processing | Ollama/gemma3 (default); Claude Haiku or OpenAI (user-supplied API key) |
+| LLM post-processing | Ollama/gemma4:e4b (default); Claude Haiku or OpenAI (user-supplied API key) |
 | Backend API | Python + FastAPI |
 | Packaging | Docker Compose (Unraid-style) |
 | iOS client | SwiftUI + custom keyboard extension (system-wide dictation) |
@@ -76,7 +76,7 @@ LLM_PROVIDER=ollama      (default — Unraid or Windows)
 LLM_PROVIDER=anthropic   (user brings own API key)
 LLM_PROVIDER=openai      (user brings own API key)
 OLLAMA_BASE_URL=http://[windows-ip]:11434
-OLLAMA_MODEL=gemma3
+OLLAMA_MODEL=gemma4:e4b
 ```
 
 ### Networking
@@ -85,9 +85,9 @@ OLLAMA_MODEL=gemma3
 - Proxmox mirrors cloud topology for local testing
 
 ## Ollama Setup (Windows)
-- Install Ollama for Windows from ollama.com
+- Install Ollama for Windows from ollama.com (current: Ollama 0.22.1)
 - Run as a Windows service so it starts on boot
-- Pull model: `ollama pull gemma3`
+- Pull model: `ollama pull gemma4:e4b` (current default model)
 - Expose on LAN so Unraid Docker can reach it
 
 ## Inspiration

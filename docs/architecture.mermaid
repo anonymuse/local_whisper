@@ -1,0 +1,52 @@
+flowchart TD
+    iOS["iOS App\nSwiftUI + Keyboard Extension"]
+    Win["Windows App\nTauri + Global Hotkey"]
+    iOSOD["iOS On-Device\nWhisperKit + Edge LLM\nMode 3 — Future POC"]
+
+    TS["Tailscale\nEncrypted Mesh Network\nMode 1 — or HTTPS for Mode 2"]
+
+    subgraph Unraid["Unraid Server — Docker"]
+        GW["FastAPI Gateway\n:8000\nAudio validation · Orchestration"]
+        ASR["Faster-Whisper ASR\nLarge-v3-Turbo · CTranslate2 · INT8\nffmpeg audio conversion"]
+        PP["LLM Post-Processor\nLLM_PROVIDER routing"]
+    end
+
+    subgraph WinPC["Windows PC — RTX 5080 FE"]
+        Ollama["Ollama 0.22.1\ngemma4:e4b — :11434\nWindows service"]
+    end
+
+    subgraph Proxmox["Proxmox Server"]
+        Staging["Staging · Monitoring\nmirrors cloud topology"]
+    end
+
+    subgraph CloudAPIs["Cloud LLM APIs — optional"]
+        Anthropic["Anthropic API\nclaude-haiku-4-5"]
+        OpenAI["OpenAI API"]
+    end
+
+    iOS -->|audio upload| TS
+    Win -->|audio upload| TS
+    TS -->|POST /transcribe| GW
+    GW -->|WAV / m4a / AAC| ASR
+    ASR -->|raw transcript| PP
+    PP -->|"LLM_PROVIDER=ollama (default)"| Ollama
+    PP -.->|LLM_PROVIDER=anthropic| Anthropic
+    PP -.->|LLM_PROVIDER=openai| OpenAI
+    PP -->|cleaned transcript| GW
+    GW -->|JSON response| TS
+    TS --> iOS
+    TS --> Win
+
+    classDef client fill:#4A90D9,color:#fff,stroke:#2C5282
+    classDef network fill:#718096,color:#fff,stroke:#2D3748
+    classDef gateway fill:#48BB78,color:#fff,stroke:#276749
+    classDef asr fill:#ED8936,color:#fff,stroke:#9C4221
+    classDef llm fill:#9F7AEA,color:#fff,stroke:#553C9A
+    classDef future stroke-dasharray:5 5
+
+    class iOS,Win client
+    class iOSOD future
+    class TS network
+    class GW gateway
+    class ASR asr
+    class PP,Ollama,Anthropic,OpenAI llm

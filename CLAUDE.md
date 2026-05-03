@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Two-layer pipeline:
 1. **ASR layer** — Faster-Whisper (CTranslate2, INT8 quantization, Whisper Large-v3-Turbo) transcribes audio to raw text
-2. **LLM layer** — Language model cleans, punctuates, and corrects the transcript (primary: Claude Haiku API; fallback: Ollama local model)
+2. **LLM layer** — Language model cleans, punctuates, and corrects the transcript (default: Ollama/gemma3; optional: Claude Haiku or OpenAI with user-supplied key)
 
 This two-layer approach is why AI app dictation is dramatically better than Apple's built-in speech recognition.
 
@@ -31,7 +31,7 @@ A single `transcribe()` abstraction routes to whichever mode is active. The app 
 | Layer | Choice |
 |---|---|
 | ASR | Faster-Whisper, Whisper Large-v3-Turbo (CTranslate2, INT8) |
-| LLM post-processing | Claude Haiku API (primary); Ollama (offline/cost-sensitive fallback) |
+| LLM post-processing | Ollama/gemma3 (default); Claude Haiku or OpenAI (user-supplied API key) |
 | Backend API | Python + FastAPI |
 | Packaging | Docker Compose (Unraid-style) |
 | iOS client | SwiftUI + custom keyboard extension (system-wide dictation) |
@@ -56,6 +56,39 @@ A single `transcribe()` abstraction routes to whichever mode is active. The app 
 - One phase at a time, fully explained and documented
 - Claude Code is primary development tool
 - Every architectural decision made with security, efficiency, and cloud-portability in mind
+
+## Home Lab Architecture
+
+### Hardware
+- Windows PC: RTX 5080 FE — runs Ollama as a Windows service (port 11434)
+- Unraid server: runs Docker containers — FastAPI gateway, Faster-Whisper
+- Proxmox server: future staging, monitoring, mirrors cloud infrastructure
+
+### Service Layout
+- FastAPI gateway (Unraid Docker, port 8000) — single entry point for all clients
+- Faster-Whisper (same container or sidecar) — GPU inference via Docker passthrough
+- LLM post-processor — routes to Ollama local, Windows Ollama, or cloud API
+- Ollama — preferred on Unraid Docker; fallback to Windows Ollama over LAN
+
+### LLM Provider Config
+```
+LLM_PROVIDER=ollama      (default — Unraid or Windows)
+LLM_PROVIDER=anthropic   (user brings own API key)
+LLM_PROVIDER=openai      (user brings own API key)
+OLLAMA_BASE_URL=http://[windows-ip]:11434
+OLLAMA_MODEL=gemma3
+```
+
+### Networking
+- All clients connect via Tailscale (home lab) or HTTPS (cloud)
+- No direct client-to-model connections — everything routes through FastAPI gateway
+- Proxmox mirrors cloud topology for local testing
+
+## Ollama Setup (Windows)
+- Install Ollama for Windows from ollama.com
+- Run as a Windows service so it starts on boot
+- Pull model: `ollama pull gemma3`
+- Expose on LAN so Unraid Docker can reach it
 
 ## Inspiration
 
